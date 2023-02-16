@@ -28,11 +28,11 @@ class SecurityController extends AbstractController
     }
 
     #[Route(path: '/login', name: 'kazetenn_users_security_login', priority: 1)]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(AuthenticationUtils $authenticationUtils, ?string $redirectToRoute = null): Response
     {
-        // if ($this->getUser()) {
-        //     return $this->redirectToRoute('target_path');
-        // }
+         if (null !== $redirectToRoute && $this->getUser()) {
+             return $this->redirectToRoute($redirectToRoute);
+         }
 
         // get the login error if there is one
         $error = $authenticationUtils->getLastAuthenticationError();
@@ -48,9 +48,13 @@ class SecurityController extends AbstractController
         throw new LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }
 
-    #[Route('/register', name: 'app_register', priority: 1)]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, UserAuthenticatorInterface $userAuthenticator, UserAuthenticator $authenticator, EntityManagerInterface $entityManager): Response
+    #[Route('/register', name: 'kazetenn_users_security_register', priority: 1)]
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, UserAuthenticatorInterface $userAuthenticator, UserAuthenticator $authenticator, EntityManagerInterface $entityManager, bool $hideRegistration = false): Response
     {
+        if ($hideRegistration && $entityManager->getRepository(User::class)->atLeastOneUserExist()){
+            return $this->redirectToRoute('kazetenn_users_security_login');
+        }
+
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
@@ -95,13 +99,13 @@ class SecurityController extends AbstractController
         $id = $request->get('id');
 
         if (null === $id) {
-            return $this->redirectToRoute('app_register');
+            return $this->redirectToRoute('kazetenn_users_security_register');
         }
 
         $user = $userRepository->find($id);
 
         if (null === $user) {
-            return $this->redirectToRoute('app_register');
+            return $this->redirectToRoute('kazetenn_users_security_register');
         }
 
         // validate email confirmation link, sets User::isVerified=true and persists
@@ -110,12 +114,12 @@ class SecurityController extends AbstractController
         } catch (VerifyEmailExceptionInterface $exception) {
             $this->addFlash('verify_email_error', $translator->trans($exception->getReason(), [], 'VerifyEmailBundle'));
 
-            return $this->redirectToRoute('app_register');
+            return $this->redirectToRoute('kazetenn_users_security_register');
         }
 
         // @TODO Change the redirect on success and handle or remove the flash message in your templates
         $this->addFlash('success', 'Your email address has been verified.');
 
-        return $this->redirectToRoute('app_register');
+        return $this->redirectToRoute('kazetenn_users_security_register');
     }
 }

@@ -45,6 +45,10 @@ class KazetennUsers extends AbstractBundle
 
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
+        foreach ($config as $key => $item) {
+            $builder->setParameter($this->extensionAlias . '.' . $key, $item);
+        }
+
         $services = $container->services()
                               ->defaults()
                               ->autowire()

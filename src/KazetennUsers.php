@@ -8,6 +8,7 @@
 
 namespace Kazetenn\Users;
 
+use Kazetenn\Users\Controller\SecurityController;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -48,8 +49,12 @@ class KazetennUsers extends AbstractBundle
                               ->defaults()
                               ->autowire()
                               ->autoconfigure();
+//        ->bind('$hideRegistration', '%kazetenn_users.hide_registration%');
 
         $services->load('Kazetenn\\Users\\', './*')
                  ->exclude('./{DependencyInjection, Tests}');
+
+        $services->set(SecurityController::class)
+            ->arg('$hideRegistration', '%kazetenn_users.hide_registration%');
     }
 }

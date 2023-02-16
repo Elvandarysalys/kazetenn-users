@@ -7,7 +7,6 @@ use Kazetenn\Users\Form\RegistrationFormType;
 use Kazetenn\Users\Repository\UserRepository;
 use Kazetenn\Users\Security\EmailVerifier;
 use Kazetenn\Users\Security\UserAuthenticator;
-use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,16 +22,16 @@ use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 class SecurityController extends AbstractController
 {
-    public function __construct(protected EmailVerifier $emailVerifier)
+    public function __construct(protected EmailVerifier $emailVerifier, protected bool $hideRegistration = false)
     {
     }
 
     #[Route(path: '/login', name: 'kazetenn_users_security_login', priority: 1)]
     public function login(AuthenticationUtils $authenticationUtils, ?string $redirectToRoute = null): Response
     {
-         if (null !== $redirectToRoute && $this->getUser()) {
-             return $this->redirectToRoute($redirectToRoute);
-         }
+        if (null !== $redirectToRoute && $this->getUser()) {
+            return $this->redirectToRoute($redirectToRoute);
+        }
 
         // get the login error if there is one
         $error = $authenticationUtils->getLastAuthenticationError();
@@ -49,9 +48,9 @@ class SecurityController extends AbstractController
     }
 
     #[Route('/register', name: 'kazetenn_users_security_register', priority: 1)]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, UserAuthenticatorInterface $userAuthenticator, UserAuthenticator $authenticator, EntityManagerInterface $entityManager, bool $hideRegistration = false): Response
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, UserAuthenticatorInterface $userAuthenticator, UserAuthenticator $authenticator, UserRepository $userRepository): Response
     {
-        if ($hideRegistration && $entityManager->getRepository(User::class)->atLeastOneUserExist()){
+        if ($this->hideRegistration && $userRepository->atLeastOneUserExist()) {
             return $this->redirectToRoute('kazetenn_users_security_login');
         }
 
@@ -68,8 +67,7 @@ class SecurityController extends AbstractController
                 )
             );
 
-            $entityManager->persist($user);
-            $entityManager->flush();
+            $userRepository->save($user);
 
             // generate a signed url and email it to the user
             $this->emailVerifier->sendEmailConfirmation('app_verify_email', $user,

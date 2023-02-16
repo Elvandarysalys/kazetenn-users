@@ -58,7 +58,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
     public function atLeastOneUserExist(): bool
     {
-        return $this->count($this->findAll()) >= 1;
+        return count($this->findAll()) >= 1;
     }
 //    /**
 //     * @return User[] Returns an array of User objects

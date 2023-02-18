@@ -4,6 +4,7 @@ namespace Kazetenn\Users\Controller;
 
 use Kazetenn\Users\Entity\User;
 use Kazetenn\Users\Form\RegistrationFormType;
+use Kazetenn\Users\KazetennUsers;
 use Kazetenn\Users\Repository\UserRepository;
 use Kazetenn\Users\Security\EmailVerifier;
 use Kazetenn\Users\Security\UserAuthenticator;
@@ -66,8 +67,9 @@ class SecurityController extends AbstractController
                     $form->get('plainPassword')->getData()
                 )
             );
+            $user->setRoles([KazetennUsers::ROLE_REDACTION, KazetennUsers::ROLE_ADMIN]);
 
-            $userRepository->save($user);
+            $userRepository->save($user, true);
 
             // generate a signed url and email it to the user
             $this->emailVerifier->sendEmailConfirmation('app_verify_email', $user,
